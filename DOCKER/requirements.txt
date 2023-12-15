@@ -1,0 +1,8 @@
+matplotlib
+numpy
+notebook
+tensorflow
+tensorflow-addons
+tensorflow-model-optimization
+streamlit
+

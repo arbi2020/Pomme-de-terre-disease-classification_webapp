@@ -1,0 +1,3 @@
+docker build -t pomme_de_terre_desease_class_streamlit_webapp -f Dockerfile.txt .
+docker pull 
+docker run -p 8501:8501 arbiteraoui/class_webapp_streamlit
