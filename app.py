@@ -1,51 +1,48 @@
-# app.py
-
 import streamlit as st
 import tensorflow as tf
-from PIL import Image
 import numpy as np
+from tensorflow.keras import models, layers
 
-# Charger le modèle CNN
-model = tf.keras.models.load_model('pomme de terre.h5')
-class_names = ['Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy']
+# Charger le modèle CNN préalablement sauvegardé
+model_CNN = models.load_model('pomme_de_terre_model.h5')
+
+# Définir la taille des images
+IMAGE_SIZE = 256
+
+def predict(model, img, class_names):
+    img_array = tf.image.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
+    img_array = tf.keras.preprocessing.image.img_to_array(img_array)
+    img_array = tf.expand_dims(img_array, 0)
+
+    predictions = model.predict(img_array)
+
+    predicted_class = class_names[np.argmax(predictions[0])]
+    confidences = predictions[0]
+
+    return predicted_class, confidences
+
+# Charger les class_names depuis votre modèle ou définissez-les ici
+class_names = ['Potato___Early_blight', 'Potato___Healthy', 'Potato___Late_blight']
 
 
-# Fonction pour prétraiter l'image
-def preprocess_image(image):
-    img = Image.open(image).convert('RGB')
-    img = img.resize((256, 256)) 
-    img_array = tf.keras.preprocessing.image.img_to_array(img)
-    img_array = tf.expand_dims(img_array, 0)  
-    return img_array
+# Titre de l'application
+st.title("DETECTION DE MALADIE DE POMME DE TERRE")
 
-def classify_image(image):
-    processed_image = preprocess_image(image)
-    predictions = model.predict(processed_image)
+# Sélectionner une image à prédire
+uploaded_file = st.file_uploader("Choisissez une image...", type="jpg")
 
-    # Obtenez l'indice de la classe prédite
-    predicted_class_index = np.argmax(predictions, axis=1)[0]
-    predicted_class_name = class_names[predicted_class_index]
+if uploaded_file is not None:
+    # Charger l'image et l'afficher
+    image = tf.image.decode_image(uploaded_file.read(), channels=3)
+    st.image(image.numpy(), caption="Image téléchargée.", use_column_width=True)
 
-    return predicted_class_name, predictions
+    # Prédire la classe de l'image
+    predicted_class, confidences = predict(model_CNN, image, class_names)
 
+    # Afficher le résultat
+    st.write("CLASSE PREDITE :")
+    st.success(predicted_class)  
 
-# Interface utilisateur Streamlit
-st.title('Application de détection des maladies à partir des images des feuilles de pommes de terre')
-uploaded_image = st.file_uploader("Choisissez une image...", type="jpg")
-
-if uploaded_image is not None:
-    st.image(uploaded_image, caption='Image téléchargée.', use_column_width=True)
-    st.write("")
-    st.write("RESULTATS : ")
-
-    # Classification de l'image
-    predicted_class, predictions = classify_image(uploaded_image)
-   
-
-    # Affichage des résultats
-    st.write("Classe prédite :")
-    st.write(predicted_class)
-    st.write("")
-    st.write("Niveau de confiance :")
-    for i, prob in enumerate(predictions[0]):
-        st.write(f"{class_names[i]}: {prob:.2%}")
+    st.write("CONFIANCE PAR CLASSE :")
+    for i, class_name in enumerate(class_names):
+        st.success(f"{class_name}: {confidences[i] * 100:.2f}%")
